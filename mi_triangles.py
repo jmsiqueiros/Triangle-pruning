@@ -13,7 +13,7 @@ G.add_edges_from([(1,2,{'w': 20}),
                   (3,4,{'w': 10}),
                   (4,5,{'w': 11}),
                   (5,3,{'w': 2}),
-                  (5,1,{'w': 13}),
+                  (5,1,{'w': 2}),
                   (5,2,{'w': 22}),
               ])
 
@@ -21,43 +21,35 @@ G.add_edges_from([(1,2,{'w': 20}),
 
 def get_triangles_nodes(G):
     # detect triangles
-    triangles_v = []
-    for trio in itertools.combinations(G.nodes(), 3):
-        vertices = []
-        for v in itertools.combinations(trio, 2):
-            vertice = G.get_edge_data(*v)
-            if vertice:
-                vertices.append(v)
+    triangles_e = get_triangles_edges(G)
 
-        if len(vertices)==3:
-            triangles_v.append(vertices)
+    triangles_n = []
+    for t in triangles_e:
+        # extract all nodes from all triangles
+        all_nodes = []
+        for e in t:
+            all_nodes.append(e[0])
+            all_nodes.append(e[1])
+        # remove duplicates to end up with 3
+        triangles_n.append(tuple(set(all_nodes)))
 
-
-    triangles = []
-    for t in triangles_v:
-        m = []
-        for v in t:
-            m.append(v[0])
-            m.append(v[1])
-        triangles.append(tuple(set(m)))
-
-    return triangles
+    return triangles_n
 
 
 def get_triangles_edges(G):
     # detect triangles
-    triangles_v = []
+    triangles_e = []
     for trio in itertools.combinations(G.nodes(), 3):
-        vertices = []
-        for v in itertools.combinations(trio, 2):
-            vertice = G.get_edge_data(*v)
-            if vertice:
-                vertices.append(v)
+        edges = []
+        for e in itertools.combinations(trio, 2):
+            edge = G.get_edge_data(*e)
+            if edge:
+                edges.append(e)
 
-        if len(vertices)==3:
-            triangles_v.append(vertices)
+        if len(edges)==3:
+            triangles_e.append(edges)
 
-    return triangles_v
+    return triangles_e
 
 
 def choose_weak_triangle(triangles):
@@ -80,6 +72,7 @@ def choose_weak_triangle(triangles):
 def prune(G):
     weak =  choose_weak_triangle(get_triangles_edges(G))
     while weak:
+        pprint.pprint(get_triangles_edges(G))
         edges = {}
         for edge in weak:
             edges[tuple(edge)] = G.get_edge_data(*edge)['w']
@@ -90,11 +83,11 @@ def prune(G):
 
 
 
-
 fig = plt.figure()
 fig.subplots_adjust(left=0.2, wspace=0.6)
+pos = nx.circular_layout(G)
 
-pos = nx.spring_layout(G)
+
 graph1 = fig.add_subplot(121)
 graph1.plot(nx.draw(G,
         pos=pos,
